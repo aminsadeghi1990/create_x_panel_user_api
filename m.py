@@ -85,8 +85,7 @@ async def add_user(request: CreateUserRequest):
     
     
     existing_user = db.query(Users).filter(Users.username == request.username).first()
-    print("#####")
-    print(existing_user)
+
     if existing_user:
         raise HTTPException(status_code=400, detail="User Exists")
 
@@ -116,14 +115,13 @@ async def add_user(request: CreateUserRequest):
             desc=request.desc
         )
         try:
-            print("++++++")
-            print(new_user)
+
             db.add(new_user)
-            print("<><><><><><>")
-            print(db.add(new_user))
             db.commit()
             print("User added and changes committed successfully")
+
         except Exception as e:
+
             db.rollback()  # Rollback changes in case of an exception
             print("An error occurred:", str(e))
 
@@ -134,7 +132,7 @@ async def add_user(request: CreateUserRequest):
         subprocess.run(["sudo", "adduser", "--disabled-password", "--gecos", "''", "--shell", "/usr/sbin/nologin", request.username])
         subprocess.run(["sudo", "passwd", request.username], input=f"{request.password}\n{request.password}\n", text=True, timeout=120)
 
-        return CreateUserResponse.message
+        return None
 
 
 
