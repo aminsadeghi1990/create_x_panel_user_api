@@ -8,6 +8,8 @@ from pydantic import BaseModel
 import subprocess
 
 from peewee import DoesNotExist
+import random
+import string
 
 
 
@@ -52,8 +54,8 @@ class Traffic(Base):
 # Define models for request and response
 class CreateUserRequest(BaseModel):
     token: str
-    username: str
-    password: str
+    # username: str
+    # password: str
     email: str = None
     mobile: str = None
     multiuser: int
@@ -81,10 +83,23 @@ async def shutdown():
 
 @app.post("/add_user")
 async def add_user(request: CreateUserRequest):
+    
     db = SessionLocal()
+
+    existing_usernames = db.query(Users.username).all()
+    print("existing usernames!!!!!!!!!!")
+    print(existing_usernames)
+    used_numbers = {int(username.split("user")[1]) for (username,) in existing_usernames}
+    print("used number")
+    print(used_numbers)
+
+    new_username_number = 1
+    while new_username_number in used_numbers:
+        new_username_number += 1
+    new_username = f"user{new_username_number}"
     
     
-    existing_user = db.query(Users).filter(Users.username == request.username).first()
+    existing_user = db.query(Users).filter(Users.username == new_username).first()
 
     if existing_user:
         raise HTTPException(status_code=400, detail="User Exists")
@@ -92,6 +107,10 @@ async def add_user(request: CreateUserRequest):
     else:
         # Exception handling for existing user
         # Proceed to create a new user here
+        random_password = "".join(random.choice(string.ascii_lowercase) for _ in range(4))
+
+
+
         traffic = 0
 
         if request.traffic > 0:
@@ -100,8 +119,8 @@ async def add_user(request: CreateUserRequest):
         st_date = date.today() if not request.connection_start else None
 
         new_user = Users(
-            username=request.username,
-            password=request.password,
+            username=new_username,
+            password=random_password,
             email=request.email,
             mobile=request.mobile,
             multiuser=request.multiuser,
@@ -125,12 +144,12 @@ async def add_user(request: CreateUserRequest):
             db.rollback()  # Rollback changes in case of an exception
             print("An error occurred:", str(e))
 
-        new_traffic = Traffic(username=request.username, download='0', upload='0', total='0')
+        new_traffic = Traffic(username=new_username, download='0', upload='0', total='0')
         db.add(new_traffic)
         db.commit()
 
-        subprocess.run(["sudo", "adduser", "--disabled-password", "--gecos", "''", "--shell", "/usr/sbin/nologin", request.username])
-        subprocess.run(["sudo", "passwd", request.username], input=f"{request.password}\n{request.password}\n", text=True, timeout=120)
+        subprocess.run(["sudo", "adduser", "--disabled-password", "--gecos", "''", "--shell", "/usr/sbin/nologin", new_username])
+        subprocess.run(["sudo", "passwd", new_username], input=f"{random_password}\n{random_password}\n", text=True, timeout=120)
 
         return None
 
