@@ -83,48 +83,58 @@ async def shutdown():
 async def add_user(request: CreateUserRequest):
     db = SessionLocal()
     
-    try:
-        existing_user = db.query(Users).filter(Users.username == request.username).first()
-        if existing_user:
-            raise HTTPException(status_code=400, detail="User Exists")
+    
+    existing_user = db.query(Users).filter(Users.username == request.username).first()
+    print("#####")
+    print(existing_user)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User Exists")
 
-    except HTTPException as e:
-        if e.status_code == 400 and "User Exists" in e.detail:
-            # Exception handling for existing user
-            # Proceed to create a new user here
-            traffic = 0
+    else:
+        # Exception handling for existing user
+        # Proceed to create a new user here
+        traffic = 0
 
-            if request.traffic > 0:
-                traffic = request.traffic
+        if request.traffic > 0:
+            traffic = request.traffic
 
-            st_date = date.today() if not request.connection_start else None
+        st_date = date.today() if not request.connection_start else None
 
-            new_user = Users(
-                username=request.username,
-                password=request.password,
-                email=request.email,
-                mobile=request.mobile,
-                multiuser=request.multiuser,
-                start_date=st_date,
-                end_date=request.expdate,
-                date_one_connect=request.connection_start,
-                customer_user='API',
-                status='active',
-                traffic=traffic,
-                referral='',
-                desc=request.desc
-            )
+        new_user = Users(
+            username=request.username,
+            password=request.password,
+            email=request.email,
+            mobile=request.mobile,
+            multiuser=request.multiuser,
+            start_date=st_date,
+            end_date=request.expdate,
+            date_one_connect=request.connection_start,
+            customer_user='API',
+            status='active',
+            traffic=traffic,
+            referral='',
+            desc=request.desc
+        )
+        try:
+            print("++++++")
+            print(new_user)
             db.add(new_user)
+            print("<><><><><><>")
+            print(db.add(new_user))
             db.commit()
+            print("User added and changes committed successfully")
+        except Exception as e:
+            db.rollback()  # Rollback changes in case of an exception
+            print("An error occurred:", str(e))
 
-            new_traffic = Traffic(username=request.username, download='0', upload='0', total='0')
-            db.add(new_traffic)
-            db.commit()
+        new_traffic = Traffic(username=request.username, download='0', upload='0', total='0')
+        db.add(new_traffic)
+        db.commit()
 
-            subprocess.run(["sudo", "adduser", "--disabled-password", "--gecos", "''", "--shell", "/usr/sbin/nologin", request.username])
-            subprocess.run(["sudo", "passwd", request.username], input=f"{request.password}\n{request.password}\n", text=True, timeout=120)
+        subprocess.run(["sudo", "adduser", "--disabled-password", "--gecos", "''", "--shell", "/usr/sbin/nologin", request.username])
+        subprocess.run(["sudo", "passwd", request.username], input=f"{request.password}\n{request.password}\n", text=True, timeout=120)
 
-
+        return CreateUserResponse.message
 
 
 
