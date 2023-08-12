@@ -14,7 +14,6 @@ import string
 
 
 
-# Define the FastAPI app
 app = FastAPI()
 
 DATABASE_URL = "sqlite:///test.db"
@@ -105,8 +104,7 @@ async def add_user(request: CreateUserRequest):
         raise HTTPException(status_code=400, detail="User Exists")
 
     else:
-        # Exception handling for existing user
-        # Proceed to create a new user here
+
         random_password = "".join(random.choice(string.ascii_lowercase) for _ in range(4))
 
 
