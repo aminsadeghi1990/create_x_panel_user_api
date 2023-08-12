@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException , Query
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -158,3 +158,26 @@ async def get_all_users():
 
     return user_list
 ####
+
+@app.get("/get_user_by_username")
+async def get_user_by_username(username: str = Query(..., description="Username of the user to retrieve")):
+    session = SessionLocal()
+    try:
+        user = session.query(Users).filter(Users.username == username).first()
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_data = {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "start_date": user.start_date,
+            "end_date": user.end_date,
+            "status": user.status,
+            "traffic": user.traffic,
+            # ... (add other attributes you want to include)
+        }
+
+        return user_data
+    finally:
+        session.close()
