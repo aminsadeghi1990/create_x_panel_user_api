@@ -150,9 +150,13 @@ async def get_all_users():
     for user in users:
         user_data = {
             "id": user.id,
+            "host": "01.mtnssh.xyz",
+            "port": 7777,
+            "Udpgw port": 7302,
             "username": user.username,
-            "email": user.email,
-            "start_date": user.start_date
+            "password": user.password,
+            "start_date": user.start_date,
+            "end_date": user.end_date
         }
         user_list.append(user_data)
 
