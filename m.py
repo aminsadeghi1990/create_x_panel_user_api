@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException , Query
+from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -6,19 +6,28 @@ from sqlalchemy import Column, String, Integer, Date
 from datetime import date
 from pydantic import BaseModel
 import subprocess
-
-from peewee import DoesNotExist
 import random
 import string
 
 
-
-
 app = FastAPI()
 
-DATABASE_URL = "sqlite:///test.db"
+
+DB_CONNECTION = "mysql"
+DB_HOST = "127.0.0.1"
+DB_PORT = "3306"
+DB_DATABASE = "XPanel_plus"
+DB_USERNAME = "root"
+DB_PASSWORD = ""
+
+
+
+
+DATABASE_URL = f"{DB_CONNECTION}://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_DATABASE}"
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 Base = declarative_base()
 
@@ -61,7 +70,7 @@ class CreateUserRequest(BaseModel):
     connection_start: int = None
     traffic: int
     expdate: date = None
-    type_traffic: str
+    type_traffic: str = "mb"
     desc: str = None
 
 class CreateUserResponse(BaseModel):
@@ -86,18 +95,17 @@ async def add_user(request: CreateUserRequest):
     db = SessionLocal()
 
     existing_usernames = db.query(Users.username).all()
-    print("existing usernames!!!!!!!!!!")
+    print("********")
     print(existing_usernames)
-    used_numbers = {int(username.split("user")[1]) for (username,) in existing_usernames}
-    print("used number")
-    print(used_numbers)
 
+    used_numbers = {int(username.split("user")[1]) for (username,) in existing_usernames}
+    print(used_numbers)
     new_username_number = 1
     while new_username_number in used_numbers:
         new_username_number += 1
     new_username = f"user{new_username_number}"
     
-    
+    new_username = "saeed"
     existing_user = db.query(Users).filter(Users.username == new_username).first()
 
     if existing_user:
